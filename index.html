@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Patrocinios Arefest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Playfair+Display:wght@700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wrapper">
+    <div class="hero-banner">
+        <div class="hero-overlay">
+            <div class="logo-container">
+                <img src="logopng.png" alt="Logo Arefest" class="main-logo">
+            </div>
+        </div>
+    </div>
+
+    <div class="info-card">
+        <h1>Registro de Patrocinios Arefest</h1>
+        <p>Completa este formulario para registrar un patrocinio conseguido para Arefest. Los datos se usarán para control interno, finanzas y marketing.</p>
+        <p class="small-note">Los campos marcados con <strong>*</strong> son obligatorios.</p>
+    </div>
+
+    <form id="patrociniosForm" novalidate>
+        <div class="section-header">
+            <div class="section-icon">1</div>
+            <div class="section-title">Datos generales</div>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="estudianteResponsable">Estudiante responsable <span>*</span></label>
+            <input type="text" id="estudianteResponsable" name="estudianteResponsable" class="input-text" placeholder="Nombre de quien consiguió el patrocinio" required>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="patrocinante">Patrocinante <span>*</span></label>
+            <input type="text" id="patrocinante" name="patrocinante" class="input-text" placeholder="Nombre de la empresa, marca o persona" required>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="descripcionEmpresa">Descripción de la empresa <span>*</span></label>
+            <textarea id="descripcionEmpresa" name="descripcionEmpresa" class="input-area" placeholder="Ej: cafetería, restaurante, emprendimiento de postres, agencia, marca local..." required></textarea>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="instagram">Instagram</label>
+            <input type="text" id="instagram" name="instagram" class="input-text" placeholder="Ej: @marca o enlace de Instagram">
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="logo">Logo del patrocinante</label>
+            <input type="file" id="logo" name="logo" class="input-file" accept="image/*,.pdf">
+            <p class="field-help">Sube el logo en PNG, JPG, SVG o PDF. Luego se guardará en la carpeta de logos de Drive.</p>
+        </div>
+
+        <div class="section-header">
+            <div class="section-icon">2</div>
+            <div class="section-title">Tipo y plan del patrocinio</div>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="tipoAporte">Tipo de aporte <span>*</span></label>
+            <select id="tipoAporte" name="tipoAporte" class="input-select" required>
+                <option value="">Selecciona una opción</option>
+                <option value="Monetario">Monetario</option>
+                <option value="Producto">Producto</option>
+                <option value="Servicio">Servicio</option>
+            </select>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="planPatrocinio">Plan de patrocinio <span>*</span></label>
+            <select id="planPatrocinio" name="planPatrocinio" class="input-select" required>
+                <option value="">Selecciona una opción</option>
+                <option value="Base - $10" data-valor="10">Base - $10</option>
+                <option value="Platino - $15" data-valor="15">Platino - $15</option>
+                <option value="Oro - $20" data-valor="20">Oro - $20</option>
+            </select>
+            <p class="field-help" id="planHelp">Selecciona el plan acordado con el patrocinante.</p>
+        </div>
+
+        <div class="question-box hidden" id="valorMonetarioBox">
+            <label class="question-title" for="valorMonetario">Valor del patrocinio</label>
+            <input type="number" id="valorMonetario" name="valorMonetario" class="input-text" placeholder="Se completa según el plan" readonly>
+            <p class="field-help">Este valor se toma automáticamente del plan seleccionado.</p>
+        </div>
+
+        <div class="section-header hidden" id="productoHeader">
+            <div class="section-icon">3</div>
+            <div class="section-title">Detalle de productos</div>
+        </div>
+
+        <div id="productosSection" class="hidden">
+            <div id="productosContainer"></div>
+
+            <div class="question-box add-product-box">
+                <button type="button" id="btnAgregarProducto" class="btn-secondary">+ Añadir otro producto</button>
+                <p class="field-help">Puedes agregar hasta 5 productos.</p>
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="fechaEntregaProducto">Fecha de entrega</label>
+                <input type="date" id="fechaEntregaProducto" name="fechaEntregaProducto" class="input-text">
+            </div>
+        </div>
+
+        <div class="section-header hidden" id="servicioHeader">
+            <div class="section-icon">3</div>
+            <div class="section-title">Detalle del servicio</div>
+        </div>
+
+        <div id="servicioSection" class="hidden">
+            <div class="question-box">
+                <label class="question-title" for="nombreServicio">¿Qué servicio aporta? <span>*</span></label>
+                <input type="text" id="nombreServicio" name="nombreServicio" class="input-text" placeholder="Ej: stand de café, fotografía, sonido, decoración">
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="descripcionServicio">Descripción del servicio</label>
+                <textarea id="descripcionServicio" name="descripcionServicio" class="input-area" placeholder="Describe brevemente qué incluye el servicio"></textarea>
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="valorServicio">Valor estimado del servicio <span>*</span></label>
+                <input type="number" id="valorServicio" name="valorServicio" class="input-text" min="0" step="0.01" placeholder="Ej: 20">
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="fechaEntregaServicio">Fecha de prestación / entrega</label>
+                <input type="date" id="fechaEntregaServicio" name="fechaEntregaServicio" class="input-text">
+            </div>
+        </div>
+
+        <div class="section-header hidden" id="pagoHeader">
+            <div class="section-icon">3</div>
+            <div class="section-title">Datos de pago</div>
+        </div>
+
+        <div id="pagoSection" class="hidden">
+            <div class="question-box">
+                <label class="question-title" for="metodoPago">Método de pago <span>*</span></label>
+                <select id="metodoPago" name="metodoPago" class="input-select">
+                    <option value="">Selecciona una opción</option>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Pago móvil">Pago móvil</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Binance">Binance</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="referencia">Referencia de pago</label>
+                <input type="text" id="referencia" name="referencia" class="input-text" placeholder="Número de referencia, código o nota del pago">
+            </div>
+
+            <div class="question-box">
+                <label class="question-title" for="capture">Capture / Comprobante</label>
+                <input type="file" id="capture" name="capture" class="input-file" accept="image/*,.pdf">
+                <p class="field-help">Sube captura o comprobante. Luego se guardará en la carpeta de captures de Drive.</p>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-icon">4</div>
+            <div class="section-title">Control interno</div>
+        </div>
+
+        <div class="question-box">
+            <label class="question-title" for="recibido">Recibido <span>*</span></label>
+            <select id="recibido" name="recibido" class="input-select" required>
+                <option value="Pendiente" selected>Pendiente</option>
+                <option value="Sí">Sí</option>
+                <option value="No">No</option>
+            </select>
+            <p class="field-help">Indica si el aporte ya fue recibido o si todavía está pendiente.</p>
+        </div>
+
+        <input type="hidden" id="estadoFinanzas" name="estadoFinanzas" value="Pendiente pago">
+
+        <div class="summary-box hidden" id="resumenBox">
+            <h2>Resumen que se enviará</h2>
+            <pre id="resumenContenido"></pre>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn-clear" onclick="limpiarFormulario()">Borrar respuestas</button>
+            <button type="submit" class="btn-submit">Enviar Registro</button>
+        </div>
+    </form>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
