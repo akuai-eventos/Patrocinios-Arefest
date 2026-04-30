@@ -7,6 +7,7 @@
     --text-secondary: #555;
     --border-soft: #f2d7c5;
     --field-border: #ddd;
+    --error: #d93025;
     --header-gradient: linear-gradient(90deg, rgba(228,116,36,1) 0%, rgba(228,116,36,0.85) 50%, rgba(228,116,36,0.5) 100%);
 }
 
@@ -35,7 +36,6 @@ body {
     overflow: hidden;
 }
 
-/* --- HEADER --- */
 .hero-banner {
     position: relative;
     height: 200px;
@@ -65,7 +65,6 @@ body {
     object-fit: contain;
 }
 
-/* --- INFO CARD --- */
 .info-card {
     margin: 20px 30px;
     padding: 25px;
@@ -95,7 +94,6 @@ body {
     line-height: 1.4;
 }
 
-/* --- SECCIONES --- */
 .section-header {
     margin: 40px 30px 20px;
     padding: 10px 0;
@@ -126,7 +124,6 @@ body {
     letter-spacing: 1px;
 }
 
-/* --- BLOQUES DE PREGUNTA --- */
 .question-box {
     margin: 0 30px 25px;
     padding: 20px;
@@ -144,10 +141,9 @@ body {
 }
 
 .question-title span {
-    color: #d93025;
+    color: var(--error);
 }
 
-/* --- INPUTS --- */
 .input-text,
 .input-area,
 .input-select,
@@ -197,7 +193,6 @@ body {
     min-height: 90px;
 }
 
-/* --- PRODUCTOS DINÁMICOS --- */
 .product-card {
     margin: 0 30px 25px;
     padding: 20px;
@@ -222,7 +217,7 @@ body {
 
 .product-grid {
     display: grid;
-    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-columns: 1fr 1fr;
     gap: 18px;
 }
 
@@ -231,75 +226,15 @@ body {
 }
 
 .add-product-box {
-    background: #fdfaf8;
+    background: #fffaf7;
+    border-style: dashed;
 }
 
-/* --- RESUMEN --- */
-.summary-box {
-    margin: 0 30px 25px;
-    padding: 20px;
-    border-radius: 8px;
-    background: #fff8f2;
-    border: 1px solid var(--border-soft);
-}
-
-.summary-box h2 {
-    margin: 0 0 10px;
-    font-size: 17px;
-    color: #b05519;
-}
-
-.summary-box pre {
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: 'Roboto', sans-serif;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
-
-/* --- BOTONES --- */
-.form-actions {
-    padding: 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    background: #fdfaf8;
-}
-
-.btn-clear,
-.btn-remove,
 .btn-secondary,
+.btn-remove,
+.btn-clear,
 .btn-submit {
     font-family: inherit;
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-.btn-clear {
-    background: none;
-    border: none;
-    color: #777;
-    font-size: 14px;
-}
-
-.btn-clear:hover {
-    color: var(--primary-orange);
-}
-
-.btn-submit {
-    background-color: var(--primary-orange);
-    color: white;
-    border: none;
-    padding: 15px 45px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 16px;
-}
-
-.btn-submit:hover {
-    background-color: var(--primary-hover);
-    transform: translateY(-2px);
 }
 
 .btn-secondary {
@@ -309,10 +244,7 @@ body {
     padding: 12px 18px;
     border-radius: 6px;
     font-weight: 700;
-}
-
-.btn-secondary:hover {
-    background: #fff1e8;
+    cursor: pointer;
 }
 
 .btn-secondary:disabled {
@@ -323,22 +255,71 @@ body {
 .btn-remove {
     background: none;
     border: none;
-    color: #b3261e;
-    font-size: 13px;
+    color: var(--error);
     font-weight: 700;
+    cursor: pointer;
 }
 
-.btn-remove:hover {
-    text-decoration: underline;
+.status-preview {
+    margin: 0 30px 25px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    background: #fff7f0;
+    color: #8a3d0f;
+    border: 1px solid var(--border-soft);
+}
+
+.form-actions {
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    background: #fdfaf8;
+}
+
+.btn-clear {
+    background: none;
+    border: none;
+    color: #777;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-submit {
+    background-color: var(--primary-orange);
+    color: white;
+    border: none;
+    padding: 15px 45px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.btn-submit:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
 }
 
 .hidden {
     display: none !important;
 }
 
-@media (max-width: 640px) {
+input:invalid,
+select:invalid,
+textarea:invalid {
+    border-bottom-color: var(--error);
+}
+
+@media (max-width: 600px) {
     body {
-        padding: 10px 0;
+        padding: 0;
+    }
+
+    .wrapper {
+        width: 100%;
+        border-radius: 0;
     }
 
     .hero-overlay {
@@ -346,10 +327,10 @@ body {
     }
 
     .info-card,
+    .section-header,
     .question-box,
     .product-card,
-    .summary-box,
-    .section-header {
+    .status-preview {
         margin-left: 18px;
         margin-right: 18px;
     }
@@ -360,7 +341,6 @@ body {
 
     .form-actions {
         flex-direction: column-reverse;
-        align-items: stretch;
     }
 
     .btn-submit,
