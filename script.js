@@ -787,7 +787,7 @@ form.addEventListener('submit', async function(e) {
 
         const mensaje = respuesta && respuesta.mensaje
             ? respuesta.mensaje
-            : 'Patrocinio enviado correctamente. Revisa Google Sheets para confirmar el registro.';
+            : 'Patrocinio enviado correctamente.';
 
         mostrarMensajeFormulario(mensaje, 'success');
 

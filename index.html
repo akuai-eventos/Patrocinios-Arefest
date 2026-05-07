@@ -163,13 +163,14 @@
 
             <div class="question-box">
                 <label class="question-title" for="referencia">Referencia <span>*</span></label>
-                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Número de referencia, código o nota del pago. Si es efectivo, escribe Efectivo." data-section-required="Monetario">
+                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Escribe los 'ultimos 6 digitos de la referencia'." data-section-required="Monetario">
+                <p class="field-help">Si es Efectivo, escribe el número de serie del billete.</p>
             </div>
 
             <div class="question-box">
-                <label class="question-title" for="capture">Capture / Comprobante <span>*</span></label>
+                <label class="question-title" for="capture">Comprobante <span>*</span></label>
                 <input type="file" id="capture" name="Capture" class="input-file" accept="image/*,.pdf" data-section-required="Monetario">
-                <p class="field-help">Sube captura o comprobante. Luego se guardará en la carpeta de captures de Drive.</p>
+                <p class="field-help">Adjunta el comprobante, si es en Efectivo adjunta foto del billete.</p>
             </div>
         </div>
 
