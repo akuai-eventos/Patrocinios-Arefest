@@ -21,16 +21,20 @@
     <div class="info-card">
         <h1>Registro de Patrocinios Arefest</h1>
         <p>Completa este formulario con la información del patrocinante que conseguiste. Los datos se preparan con el mismo orden de la hoja <strong>PATROCINIOS</strong>.</p>
-        <p class="small-note">Todos los campos visibles son obligatorios.</p>
+        <p class="small-note">Todos los campos visibles son obligatorios. El ID se generará automáticamente en el sistema con formato <strong>P-0001</strong>.</p>
     </div>
 
     <form id="patrociniosForm">
         <input type="hidden" id="id" name="ID" value="">
+        <input type="hidden" id="fechaRegistro" name="Fecha de registro" value="">
         <input type="hidden" id="estadoFinanzas" name="Estado finanzas" value="Pendiente pago">
 
         <div class="section-header">
             <div class="section-icon">1</div>
             <div class="section-title">Datos generales</div>
+        </div>
+
+        <div class="system-note">
         </div>
 
         <div class="question-box">
@@ -51,7 +55,7 @@
         <div class="question-box">
             <label class="question-title" for="logo">Logo del patrocinante <span>*</span></label>
             <input type="file" id="logo" name="Logo" class="input-file" accept="image/*,.pdf" required>
-            <p class="field-help">Sube el logo en PNG, JPG, WEBP, SVG o PDF. Luego se guardará en la carpeta de logos de Drive.</p>
+            <p class="field-help">Sube el logo en PNG.</p>
         </div>
 
         <div class="question-box">
@@ -76,19 +80,20 @@
         </div>
 
         <div class="question-box">
-            <label class="question-title" for="planPatrocinio">Plan de patrocinio <span>*</span></label>
-            <select id="planPatrocinio" name="Plan de patrocinio" class="input-select" required>
+            <label class="question-title" for="nombrePlan">Nombre del plan <span>*</span></label>
+            <select id="nombrePlan" name="Nombre del plan" class="input-select" required>
                 <option value="">Selecciona una opción</option>
-                <option value="Base - $10" data-valor="10">Base - $10</option>
-                <option value="Platino - $15" data-valor="15">Platino - $15</option>
-                <option value="Oro - $20" data-valor="20">Oro - $20</option>
+                <option value="Aliado Base" data-monto="10">Aliado Base — $10</option>
+                <option value="Aliado Bronce" data-monto="20">Aliado Bronce — $20</option>
+                <option value="Aliado Plata" data-monto="40">Aliado Plata — $40</option>
+                <option value="Aliado Oro / Estratégico" data-monto="80">Aliado Oro / Estratégico — $80</option>
             </select>
+            <p class="field-help">El monto representa el valor equivalente del intercambio.</p>
         </div>
 
-        <div class="question-box hidden" id="valorMonetarioBox">
-            <label class="question-title" for="valorMonetario">Valor estimado del patrocinio <span>*</span></label>
-            <input type="number" id="valorMonetario" name="Valor estimado monetario" class="input-text" min="0" step="0.01" placeholder="Se completa según el plan" readonly>
-            <p class="field-help">Este valor se completa automáticamente según el plan seleccionado.</p>
+        <div class="question-box">
+            <label class="question-title" for="montoPlan">Monto del plan <span>*</span></label>
+            <input type="number" id="montoPlan" name="Monto del plan" class="input-text auto-field" min="0" step="0.01" placeholder="Se completa según el plan" readonly required>
         </div>
 
         <div class="section-header hidden" id="productoHeader">
@@ -97,6 +102,9 @@
         </div>
 
         <div id="productosSection" class="hidden">
+            <div class="system-note">
+            </div>
+
             <div id="productosContainer"></div>
 
             <div class="question-box add-product-box">
@@ -128,7 +136,7 @@
 
             <div class="question-box">
                 <label class="question-title" for="valorServicio">Valor estimado del servicio <span>*</span></label>
-                <input type="number" id="valorServicio" name="Valor estimado servicio" class="input-text" min="0" step="0.01" placeholder="Ej: 20" data-section-required="Servicio">
+                <input type="number" id="valorServicio" name="Valor estimado servicio" class="input-text" min="0" step="0.01" placeholder="Ej: 80" data-section-required="Servicio">
             </div>
 
             <div class="question-box">
@@ -159,7 +167,7 @@
 
             <div class="question-box">
                 <label class="question-title" for="referencia">Referencia <span>*</span></label>
-                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Número de referencia, código o nota del pago" data-section-required="Monetario">
+                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Número de referencia, código o nota del pago. Si es efectivo, escribe Efectivo." data-section-required="Monetario">
             </div>
 
             <div class="question-box">
@@ -169,29 +177,11 @@
             </div>
         </div>
 
-        <div class="section-header">
-            <div class="section-icon">4</div>
-            <div class="section-title">Control interno</div>
-        </div>
-
-        <div class="question-box">
-            <label class="question-title" for="recibido">Recibido <span>*</span></label>
-            <select id="recibido" name="Recibido" class="input-select" required>
-                <option value="">Selecciona una opción</option>
-                <option value="Pendiente">Pendiente</option>
-                <option value="Sí">Sí</option>
-                <option value="No">No</option>
-            </select>
-            <p class="field-help">Indica si el aporte ya fue recibido o si todavía está pendiente.</p>
-        </div>
-
-        <div class="status-preview" aria-live="polite">
-            Estado finanzas inicial: <strong id="estadoFinanzasPreview">Pendiente pago</strong>
-        </div>
+        <div id="formMessage" class="form-message hidden" aria-live="polite"></div>
 
         <div class="form-actions">
             <button type="button" class="btn-clear" onclick="limpiarFormulario()">Borrar respuestas</button>
-            <button type="submit" class="btn-submit">Enviar patrocinio</button>
+            <button type="submit" id="btnSubmit" class="btn-submit">Enviar patrocinio</button>
         </div>
     </form>
 </div>
