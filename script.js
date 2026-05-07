@@ -16,6 +16,7 @@ const INSUMOS_STOCK = [
     { nombre: 'Hueso Ahumado', categoria: 'Proteína', requerido: 1, unidad: 'Kg' },
     { nombre: 'Huevos', categoria: 'Proteína', requerido: 2, unidad: 'Cartón' },
     { nombre: 'Tocineta Ahumada', categoria: 'Proteína', requerido: 1, unidad: 'Kg' },
+
     { nombre: 'Aceite', categoria: 'Víveres', requerido: 1, unidad: 'Galón' },
     { nombre: 'Aceitunas', categoria: 'Víveres', requerido: 1, unidad: 'Botella mediana' },
     { nombre: 'Alcaparras', categoria: 'Víveres', requerido: 1, unidad: 'Botella mediana' },
@@ -42,15 +43,34 @@ const INSUMOS_STOCK = [
     { nombre: 'Servilletas', categoria: 'Víveres', requerido: 4, unidad: 'Paquetes' },
     { nombre: 'Toallín', categoria: 'Víveres', requerido: 1, unidad: 'Unidad' },
     { nombre: 'Vinagre', categoria: 'Víveres', requerido: 0.5, unidad: 'Lt' },
+
     { nombre: 'Guantes desechables', categoria: 'Utensilios', requerido: 1, unidad: 'Caja' },
     { nombre: 'Teteros dispensadores de salsas', categoria: 'Utensilios', requerido: 5, unidad: 'Unidades' },
+
     { nombre: 'Otro', categoria: 'Otro', requerido: '', unidad: '' }
 ];
 
 const UNIDADES = [
-    'Kg', 'gr', 'Lt', 'ml', 'Galón', 'Unidad', 'Unidades', 'Botella',
-    'Botella mediana', 'Botella pequeña', 'Bulto', 'Cartón', 'Caja',
-    'Paquete', 'Paquetes', 'Bolsa', 'Bolsas', 'Servicio', 'No aplica', 'Otro'
+    'Kg',
+    'gr',
+    'Lt',
+    'ml',
+    'Galón',
+    'Unidad',
+    'Unidades',
+    'Botella',
+    'Botella mediana',
+    'Botella pequeña',
+    'Bulto',
+    'Cartón',
+    'Caja',
+    'Paquete',
+    'Paquetes',
+    'Bolsa',
+    'Bolsas',
+    'Servicio',
+    'No aplica',
+    'Otro'
 ];
 
 const MAX_PRODUCTOS = 5;
@@ -76,6 +96,7 @@ const btnSubmit = document.getElementById('btnSubmit');
 function limpiarFormulario() {
     if (confirm('¿Seguro que deseas borrar todo el formulario?')) {
         form.reset();
+        form.classList.remove('was-submitted');
         productosContainer.innerHTML = '';
         contadorProductos = 0;
         ocultarMensajeFormulario();
@@ -91,19 +112,55 @@ function mostrar(elemento, debeMostrar) {
 
 function mostrarMensajeFormulario(texto, tipo = 'info') {
     if (!formMessage) return;
+
     formMessage.textContent = texto;
     formMessage.className = `form-message form-message-${tipo}`;
 }
 
 function ocultarMensajeFormulario() {
     if (!formMessage) return;
+
     formMessage.textContent = '';
     formMessage.className = 'form-message hidden';
+}
+
+function getValue(id) {
+    const elemento = document.getElementById(id);
+    return elemento ? elemento.value : '';
+}
+
+function getTrimValue(id) {
+    return getValue(id).trim();
+}
+
+function getFile(id) {
+    const input = document.getElementById(id);
+    return input && input.files && input.files[0] ? input.files[0] : null;
+}
+
+function sanitizarNombreArchivo(texto) {
+    return String(texto || '')
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^\w\-]/g, '');
+}
+
+function obtenerExtensionArchivo(file) {
+    if (!file || !file.name || !file.name.includes('.')) return '';
+    return file.name.substring(file.name.lastIndexOf('.'));
+}
+
+function generarNombreComprobante(file, referencia) {
+    const base = sanitizarNombreArchivo(referencia) || 'comprobante';
+    const extension = obtenerExtensionArchivo(file);
+
+    return `${base}${extension}`;
 }
 
 function activarCamposPorSeccion(seccionActiva) {
     document.querySelectorAll('[data-section-required]').forEach((campo) => {
         const pertenece = campo.dataset.sectionRequired === seccionActiva;
+
         campo.required = pertenece;
         campo.disabled = !pertenece;
 
@@ -114,6 +171,7 @@ function activarCamposPorSeccion(seccionActiva) {
 
     document.querySelectorAll('[data-product-required]').forEach((campo) => {
         const activo = seccionActiva === 'Producto';
+
         campo.required = activo;
         campo.disabled = !activo;
 
@@ -149,14 +207,23 @@ function actualizarSecciones() {
         contadorProductos = 0;
     }
 
-    estadoFinanzas.value = esMonetario ? 'Pendiente pago' : 'No aplica';
-    estadoFinanzasPreview.textContent = estadoFinanzas.value;
+    const estadoAutomatico = esMonetario ? 'Pago confirmado' : 'No aplica';
+
+    if (estadoFinanzas) {
+        estadoFinanzas.value = estadoAutomatico;
+    }
+
+    if (estadoFinanzasPreview) {
+        estadoFinanzasPreview.textContent = estadoAutomatico;
+    }
 
     actualizarMontoPlan();
     actualizarEstadoBotonAgregar();
 }
 
 function actualizarMontoPlan() {
+    if (!montoPlan || !nombrePlan) return;
+
     montoPlan.value = PLANES[nombrePlan.value] || '';
 }
 
@@ -165,21 +232,27 @@ function obtenerOpcionesInsumos() {
         const label = insumo.nombre === 'Otro'
             ? 'Otro'
             : `${insumo.nombre} — ${insumo.categoria} — requerido: ${insumo.requerido} ${insumo.unidad}`;
+
         return `<option value="${escapeHtml(insumo.nombre)}" data-unidad="${escapeHtml(insumo.unidad)}">${escapeHtml(label)}</option>`;
     }).join('');
 }
 
 function obtenerOpcionesUnidades() {
-    return UNIDADES.map((unidad) => `<option value="${escapeHtml(unidad)}">${escapeHtml(unidad)}</option>`).join('');
+    return UNIDADES.map((unidad) => {
+        return `<option value="${escapeHtml(unidad)}">${escapeHtml(unidad)}</option>`;
+    }).join('');
 }
 
 function agregarProducto() {
     const totalActual = productosContainer.children.length;
+
     if (totalActual >= MAX_PRODUCTOS) return;
 
     contadorProductos += 1;
+
     const productoId = contadorProductos;
     const card = document.createElement('div');
+
     card.className = 'product-card';
     card.dataset.productCard = productoId;
 
@@ -193,26 +266,41 @@ function agregarProducto() {
 
         <div class="product-grid">
             <div class="product-field-full">
-                <label class="question-title" for="productoNombre${productoId}">¿Qué producto aporta? <span>*</span></label>
+                <label class="question-title" for="productoNombre${productoId}">
+                    ¿Qué producto aporta? <span>*</span>
+                </label>
+
                 <select id="productoNombre${productoId}" class="input-select producto-nombre" data-product-required required onchange="manejarCambioProducto(${productoId})">
                     <option value="">Selecciona un insumo del stock</option>
                     ${obtenerOpcionesInsumos()}
                 </select>
-                <p class="field-help stock-note" id="productoStockNota${productoId}">Selecciona un insumo para ver su unidad sugerida.</p>
+
+                <p class="field-help stock-note" id="productoStockNota${productoId}">
+                    Selecciona un insumo para ver su unidad sugerida.
+                </p>
             </div>
 
             <div class="product-field-full other-product-field hidden" id="productoOtroBox${productoId}">
-                <label class="question-title" for="productoOtro${productoId}">Especifica el producto <span>*</span></label>
+                <label class="question-title" for="productoOtro${productoId}">
+                    Especifica el producto <span>*</span>
+                </label>
+
                 <input type="text" id="productoOtro${productoId}" class="input-text producto-otro" placeholder="Escribe el producto o insumo" disabled>
             </div>
 
             <div>
-                <label class="question-title" for="productoCantidad${productoId}">Cantidad <span>*</span></label>
+                <label class="question-title" for="productoCantidad${productoId}">
+                    Cantidad <span>*</span>
+                </label>
+
                 <input type="number" id="productoCantidad${productoId}" class="input-text producto-cantidad" min="0.01" step="0.01" placeholder="Ej: 5" data-product-required required>
             </div>
 
             <div>
-                <label class="question-title" for="productoUnidad${productoId}">Und de medida <span>*</span></label>
+                <label class="question-title" for="productoUnidad${productoId}">
+                    Und de medida <span>*</span>
+                </label>
+
                 <select id="productoUnidad${productoId}" class="input-select producto-unidad" data-product-required required>
                     <option value="">Selecciona una unidad</option>
                     ${obtenerOpcionesUnidades()}
@@ -220,13 +308,17 @@ function agregarProducto() {
             </div>
 
             <div class="product-field-full">
-                <label class="question-title" for="productoValor${productoId}">Valor estimado <span>*</span></label>
+                <label class="question-title" for="productoValor${productoId}">
+                    Valor estimado <span>*</span>
+                </label>
+
                 <input type="number" id="productoValor${productoId}" class="input-text producto-valor" min="0" step="0.01" placeholder="Ej: 20" data-product-required required>
             </div>
         </div>
     `;
 
     productosContainer.appendChild(card);
+
     actualizarTitulosProductos();
     activarCamposPorSeccion(tipoAporte.value);
     actualizarEstadoBotonAgregar();
@@ -236,6 +328,9 @@ function manejarCambioProducto(productoId) {
     const select = document.getElementById(`productoNombre${productoId}`);
     const unidad = document.getElementById(`productoUnidad${productoId}`);
     const nota = document.getElementById(`productoStockNota${productoId}`);
+
+    if (!select) return;
+
     const selected = select.options[select.selectedIndex];
     const unidadSugerida = selected ? selected.dataset.unidad : '';
     const insumo = INSUMOS_STOCK.find((item) => item.nombre === select.value);
@@ -262,22 +357,31 @@ function actualizarCamposOtroProducto() {
         const select = card.querySelector('.producto-nombre');
         const box = card.querySelector('.other-product-field');
         const inputOtro = card.querySelector('.producto-otro');
+
         const esProductoActivo = tipoAporte.value === 'Producto';
         const esOtro = select && select.value === 'Otro';
 
-        if (box) box.classList.toggle('hidden', !esOtro);
+        if (box) {
+            box.classList.toggle('hidden', !esOtro);
+        }
 
         if (inputOtro) {
             inputOtro.disabled = !(esProductoActivo && esOtro);
             inputOtro.required = esProductoActivo && esOtro;
-            if (!esOtro) inputOtro.value = '';
+
+            if (!esOtro) {
+                inputOtro.value = '';
+            }
         }
     });
 }
 
 function eliminarProducto(productoId) {
     const card = document.querySelector(`[data-product-card="${productoId}"]`);
-    if (card) card.remove();
+
+    if (card) {
+        card.remove();
+    }
 
     actualizarTitulosProductos();
     actualizarEstadoBotonAgregar();
@@ -285,15 +389,21 @@ function eliminarProducto(productoId) {
 
 function actualizarTitulosProductos() {
     const cards = document.querySelectorAll('[data-product-card]');
+
     cards.forEach((card, index) => {
         const titulo = card.querySelector('.product-card-title');
-        if (titulo) titulo.textContent = `Producto ${index + 1}`;
+
+        if (titulo) {
+            titulo.textContent = `Producto ${index + 1}`;
+        }
     });
 }
 
 function actualizarEstadoBotonAgregar() {
     const totalCards = document.querySelectorAll('[data-product-card]').length;
+
     if (!btnAgregarProducto) return;
+
     btnAgregarProducto.disabled = totalCards >= MAX_PRODUCTOS;
     btnAgregarProducto.textContent = totalCards >= MAX_PRODUCTOS
         ? 'Máximo 5 productos agregados'
@@ -302,7 +412,10 @@ function actualizarEstadoBotonAgregar() {
 
 function obtenerNombreArchivo(idCampo) {
     const input = document.getElementById(idCampo);
-    return input && input.files && input.files[0] ? input.files[0].name : '';
+
+    return input && input.files && input.files[0]
+        ? input.files[0].name
+        : '';
 }
 
 function archivoABase64(file, nombrePersonalizado = null) {
@@ -313,14 +426,17 @@ function archivoABase64(file, nombrePersonalizado = null) {
         }
 
         const reader = new FileReader();
+
         reader.onload = () => {
             const base64 = String(reader.result).split(',')[1];
+
             resolve({
                 nombre: nombrePersonalizado || file.name,
                 tipo: file.type,
                 base64
             });
         };
+
         reader.onerror = reject;
         reader.readAsDataURL(file);
     });
@@ -332,19 +448,21 @@ function obtenerProductos() {
     return Array.from(cards).map((card) => {
         const selectNombre = card.querySelector('.producto-nombre');
         const inputOtro = card.querySelector('.producto-otro');
-        const nombreSeleccionado = selectNombre.value.trim();
+
+        const nombreSeleccionado = selectNombre ? selectNombre.value.trim() : '';
         const nombreFinal = nombreSeleccionado === 'Otro'
-            ? inputOtro.value.trim()
+            ? (inputOtro ? inputOtro.value.trim() : '')
             : nombreSeleccionado;
+
         const insumo = INSUMOS_STOCK.find((item) => item.nombre === nombreSeleccionado);
 
         return {
             nombre: nombreFinal,
             nombreSeleccionado,
             categoria: insumo ? insumo.categoria : 'Otro',
-            cantidad: card.querySelector('.producto-cantidad').value.trim(),
-            unidad: card.querySelector('.producto-unidad').value.trim(),
-            valor: Number(card.querySelector('.producto-valor').value || 0)
+            cantidad: card.querySelector('.producto-cantidad')?.value.trim() || '',
+            unidad: card.querySelector('.producto-unidad')?.value.trim() || '',
+            valor: Number(card.querySelector('.producto-valor')?.value || 0)
         };
     });
 }
@@ -376,8 +494,12 @@ async function obtenerDatosFormulario() {
     const tipo = tipoAporte.value;
     const plan = nombrePlan.value;
     const monto = PLANES[plan] || '';
+
     const productos = obtenerProductos();
-    const valorProductos = productos.reduce((total, producto) => total + Number(producto.valor || 0), 0);
+    const valorProductos = productos.reduce((total, producto) => {
+        return total + Number(producto.valor || 0);
+    }, 0);
+
     const logoFile = getFile('logo');
     const captureFile = getFile('capture');
 
@@ -399,6 +521,7 @@ async function obtenerDatosFormulario() {
         fechaEntrega = 'No aplica';
         metodoPago = getValue('metodoPago');
         referencia = getTrimValue('referencia');
+
         nombreComprobantePersonalizado = generarNombreComprobante(captureFile, referencia);
         capture = nombreComprobantePersonalizado;
     }
@@ -472,7 +595,10 @@ function validarFormulario() {
         }
 
         const incompleto = productos.some((producto) => {
-            return !producto.nombre || !producto.cantidad || !producto.unidad || Number.isNaN(producto.valor);
+            return !producto.nombre ||
+                !producto.cantidad ||
+                !producto.unidad ||
+                Number.isNaN(producto.valor);
         });
 
         if (incompleto) {
@@ -485,23 +611,20 @@ function validarFormulario() {
 }
 
 async function enviarPatrocinio(datos) {
-    if (window.google && google.script && google.script.run) {
-        return new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .guardarPatrocinio(datos);
-        });
-    }
+    await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(datos)
+    });
 
-    console.log('Datos listos para enviar a Apps Script:', datos);
     return {
         ok: true,
-        modo: 'demo',
-        mensaje: 'Formulario validado. Falta conectar la función guardarPatrocinio(datos) en Apps Script.'
+        mensaje: 'Patrocinio enviado correctamente. Revisa Google Sheets para confirmar el registro.'
     };
 }
-
 
 function crearModalConfirmacionSiNoExiste() {
     let overlay = document.getElementById('confirmModalOverlay');
@@ -632,6 +755,7 @@ function mostrarConfirmacionEnvio(datos) {
 
 form.addEventListener('submit', async function(e) {
     e.preventDefault();
+
     form.classList.add('was-submitted');
     ocultarMensajeFormulario();
 
