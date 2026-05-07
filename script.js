@@ -101,6 +101,20 @@ function ocultarMensajeFormulario() {
     formMessage.className = 'form-message hidden';
 }
 
+function getValue(id) {
+    const elemento = document.getElementById(id);
+    return elemento ? elemento.value : '';
+}
+
+function getTrimValue(id) {
+    return getValue(id).trim();
+}
+
+function getFile(id) {
+    const input = document.getElementById(id);
+    return input && input.files && input.files[0] ? input.files[0] : null;
+}
+
 function activarCamposPorSeccion(seccionActiva) {
     document.querySelectorAll('[data-section-required]').forEach((campo) => {
         const pertenece = campo.dataset.sectionRequired === seccionActiva;
@@ -149,14 +163,22 @@ function actualizarSecciones() {
         contadorProductos = 0;
     }
 
-    estadoFinanzas.value = esMonetario ? 'Pendiente pago' : 'No aplica';
-    estadoFinanzasPreview.textContent = estadoFinanzas.value;
+    const estadoAutomatico = esMonetario ? 'Pago confirmado' : 'No aplica';
+
+    if (estadoFinanzas) {
+        estadoFinanzas.value = estadoAutomatico;
+    }
+
+    if (estadoFinanzasPreview) {
+        estadoFinanzasPreview.textContent = estadoAutomatico;
+    }
 
     actualizarMontoPlan();
     actualizarEstadoBotonAgregar();
 }
 
 function actualizarMontoPlan() {
+    if (!montoPlan || !nombrePlan) return;
     montoPlan.value = PLANES[nombrePlan.value] || '';
 }
 
@@ -378,8 +400,8 @@ async function obtenerDatosFormulario() {
     const monto = PLANES[plan] || '';
     const productos = obtenerProductos();
     const valorProductos = productos.reduce((total, producto) => total + Number(producto.valor || 0), 0);
-    const logoFile = document.getElementById('logo').files[0];
-    const captureFile = document.getElementById('capture').files[0];
+    const logoFile = getFile('logo');
+    const captureFile = getFile('capture');
 
     let queAporta = '';
     let cantidad = '';
@@ -396,8 +418,8 @@ async function obtenerDatosFormulario() {
         unidad = 'Pago';
         valorEstimado = monto;
         fechaEntrega = 'No aplica';
-        metodoPago = document.getElementById('metodoPago').value;
-        referencia = document.getElementById('referencia').value.trim();
+        metodoPago = getValue('metodoPago');
+        referencia = getTrimValue('referencia');
         capture = obtenerNombreArchivo('capture');
     }
 
@@ -406,29 +428,32 @@ async function obtenerDatosFormulario() {
         cantidad = productos.length > 1 ? 'Varios' : (productos[0]?.cantidad || '');
         unidad = productos.length > 1 ? 'Varios' : (productos[0]?.unidad || '');
         valorEstimado = valorProductos;
-        fechaEntrega = document.getElementById('fechaEntregaProducto').value;
+        fechaEntrega = getValue('fechaEntregaProducto');
     }
 
     if (tipo === 'Servicio') {
-        const nombreServicio = document.getElementById('nombreServicio').value.trim();
-        const descripcionServicio = document.getElementById('descripcionServicio').value.trim();
+        const nombreServicio = getTrimValue('nombreServicio');
+        const descripcionServicio = getTrimValue('descripcionServicio');
 
         queAporta = `${nombreServicio} — ${descripcionServicio}`;
         cantidad = 'No aplica';
         unidad = 'Servicio';
-        valorEstimado = Number(document.getElementById('valorServicio').value || 0);
-        fechaEntrega = document.getElementById('fechaEntregaServicio').value;
+        valorEstimado = Number(getValue('valorServicio') || 0);
+        fechaEntrega = getValue('fechaEntregaServicio');
     }
+
+    const recibidoAutomatico = tipo === 'Monetario' ? 'Sí' : 'Pendiente';
+    const estadoFinanzasAutomatico = tipo === 'Monetario' ? 'Pago confirmado' : 'No aplica';
 
     return {
         columnas: {
-            'ID': document.getElementById('id').value,
+            'ID': getValue('id'),
             'Fecha de registro': obtenerFechaRegistroLocal(),
-            'Estudiante responsable': document.getElementById('estudianteResponsable').value.trim(),
-            'Patrocinante': document.getElementById('patrocinante').value.trim(),
-            'Descripción de la empresa': document.getElementById('descripcionEmpresa').value.trim(),
+            'Estudiante responsable': getTrimValue('estudianteResponsable'),
+            'Patrocinante': getTrimValue('patrocinante'),
+            'Descripción de la empresa': getTrimValue('descripcionEmpresa'),
             'Logo': obtenerNombreArchivo('logo'),
-            'Instagram': document.getElementById('instagram').value.trim(),
+            'Instagram': getTrimValue('instagram'),
             'Tipo de aporte': tipo,
             'Nombre del plan': plan,
             'Monto del plan': monto,
@@ -436,12 +461,12 @@ async function obtenerDatosFormulario() {
             'Cantidad': cantidad,
             'Und de medida': unidad,
             'Valor estimado': valorEstimado,
-            'Recibido': document.getElementById('recibido').value,
+            'Recibido': recibidoAutomatico,
             'Fecha de entrega': fechaEntrega,
             'Método de pago': metodoPago,
             'Referencia': referencia,
             'Capture': capture,
-            'Estado finanzas': estadoFinanzas.value
+            'Estado finanzas': estadoFinanzasAutomatico
         },
         productos,
         archivos: {
@@ -479,20 +504,18 @@ function validarFormulario() {
 }
 
 async function enviarPatrocinio(datos) {
-    if (window.google && google.script && google.script.run) {
-        return new Promise((resolve, reject) => {
-            google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .guardarPatrocinio(datos);
-        });
-    }
+    await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+        },
+        body: JSON.stringify(datos)
+    });
 
-    console.log('Datos listos para enviar a Apps Script:', datos);
     return {
         ok: true,
-        modo: 'demo',
-        mensaje: 'Formulario validado. Falta conectar la función guardarPatrocinio(datos) en Apps Script.'
+        mensaje: 'Patrocinio enviado correctamente. Revisa Google Sheets para confirmar el registro.'
     };
 }
 
@@ -519,12 +542,11 @@ form.addEventListener('submit', async function(e) {
 
         mostrarMensajeFormulario(mensaje, 'success');
 
-        if (!respuesta || respuesta.modo !== 'demo') {
-            form.reset();
-            productosContainer.innerHTML = '';
-            contadorProductos = 0;
-            actualizarSecciones();
-        }
+        form.reset();
+        productosContainer.innerHTML = '';
+        contadorProductos = 0;
+        actualizarSecciones();
+
     } catch (error) {
         console.error(error);
         mostrarMensajeFormulario(`Error: ${error.message || error}`, 'error');
