@@ -1,3 +1,5 @@
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzieexGmpDRVKH3KHenjV7bfWfmlUTIjsyuoPPsLKze8HuhHBoi5xsDqSXaTLEyBVlmng/exec";
+
 const PLANES = {
     'Aliado Base': 10,
     'Aliado Bronce': 20,
