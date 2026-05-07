@@ -20,7 +20,8 @@
 
     <div class="info-card">
         <h1>Registro de Patrocinios Arefest</h1>
-        <p>Completa este formulario con la información del patrocinante que conseguiste.</p>
+        <p>Completa este formulario con la información del patrocinante que conseguiste. Los datos se preparan con el mismo orden de la hoja <strong>PATROCINIOS</strong>.</p>
+        <p class="small-note">Todos los campos visibles son obligatorios. El ID se generará automáticamente en el sistema con formato <strong>P-0001</strong>.</p>
     </div>
 
     <form id="patrociniosForm">
@@ -157,19 +158,22 @@
                     <option value="Efectivo">Efectivo</option>
                     <option value="Transferencia">Transferencia</option>
                     <option value="Pago móvil">Pago móvil</option>
+                    <option value="Zelle">Zelle</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Binance">Binance</option>
+                    <option value="Otro">Otro</option>
                 </select>
             </div>
 
             <div class="question-box">
                 <label class="question-title" for="referencia">Referencia <span>*</span></label>
-                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Escribe los últimos 6 números de referencia." data-section-required="Monetario">
-             <p class="field-help">Si su pago es en Efectivo, escriba el número de serie de billete.</p>
+                <input type="text" id="referencia" name="Referencia" class="input-text" placeholder="Número de referencia, código o nota del pago. Si es efectivo, escribe Efectivo." data-section-required="Monetario">
             </div>
 
             <div class="question-box">
-                <label class="question-title" for="capture">Comprobante del pago <span>*</span></label>
+                <label class="question-title" for="capture">Capture / Comprobante <span>*</span></label>
                 <input type="file" id="capture" name="Capture" class="input-file" accept="image/*,.pdf" data-section-required="Monetario">
-                <p class="field-help">Ajunte el comprobante o foto del billete (en caso de ser pago en Efectivo).</p>
+                <p class="field-help">Sube captura o comprobante. Luego se guardará en la carpeta de captures de Drive.</p>
             </div>
         </div>
 

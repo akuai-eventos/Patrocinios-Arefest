@@ -101,20 +101,6 @@ function ocultarMensajeFormulario() {
     formMessage.className = 'form-message hidden';
 }
 
-function getValue(id) {
-    const elemento = document.getElementById(id);
-    return elemento ? elemento.value : '';
-}
-
-function getTrimValue(id) {
-    return getValue(id).trim();
-}
-
-function getFile(id) {
-    const input = document.getElementById(id);
-    return input && input.files && input.files[0] ? input.files[0] : null;
-}
-
 function activarCamposPorSeccion(seccionActiva) {
     document.querySelectorAll('[data-section-required]').forEach((campo) => {
         const pertenece = campo.dataset.sectionRequired === seccionActiva;
@@ -163,22 +149,14 @@ function actualizarSecciones() {
         contadorProductos = 0;
     }
 
-    const estadoAutomatico = esMonetario ? 'Pago confirmado' : 'No aplica';
-
-    if (estadoFinanzas) {
-        estadoFinanzas.value = estadoAutomatico;
-    }
-
-    if (estadoFinanzasPreview) {
-        estadoFinanzasPreview.textContent = estadoAutomatico;
-    }
+    estadoFinanzas.value = esMonetario ? 'Pendiente pago' : 'No aplica';
+    estadoFinanzasPreview.textContent = estadoFinanzas.value;
 
     actualizarMontoPlan();
     actualizarEstadoBotonAgregar();
 }
 
 function actualizarMontoPlan() {
-    if (!montoPlan || !nombrePlan) return;
     montoPlan.value = PLANES[nombrePlan.value] || '';
 }
 
@@ -327,7 +305,7 @@ function obtenerNombreArchivo(idCampo) {
     return input && input.files && input.files[0] ? input.files[0].name : '';
 }
 
-function archivoABase64(file) {
+function archivoABase64(file, nombrePersonalizado = null) {
     return new Promise((resolve, reject) => {
         if (!file) {
             resolve(null);
@@ -338,7 +316,7 @@ function archivoABase64(file) {
         reader.onload = () => {
             const base64 = String(reader.result).split(',')[1];
             resolve({
-                nombre: file.name,
+                nombre: nombrePersonalizado || file.name,
                 tipo: file.type,
                 base64
             });
@@ -411,6 +389,7 @@ async function obtenerDatosFormulario() {
     let metodoPago = 'No aplica';
     let referencia = 'No aplica';
     let capture = 'No aplica';
+    let nombreComprobantePersonalizado = null;
 
     if (tipo === 'Monetario') {
         queAporta = 'Aporte monetario';
@@ -420,7 +399,8 @@ async function obtenerDatosFormulario() {
         fechaEntrega = 'No aplica';
         metodoPago = getValue('metodoPago');
         referencia = getTrimValue('referencia');
-        capture = obtenerNombreArchivo('capture');
+        nombreComprobantePersonalizado = generarNombreComprobante(captureFile, referencia);
+        capture = nombreComprobantePersonalizado;
     }
 
     if (tipo === 'Producto') {
@@ -455,6 +435,7 @@ async function obtenerDatosFormulario() {
             'Logo': obtenerNombreArchivo('logo'),
             'Instagram': getTrimValue('instagram'),
             'Tipo de aporte': tipo,
+            'Plan de patrocinio': plan,
             'Nombre del plan': plan,
             'Monto del plan': monto,
             '¿Qué aporta?': queAporta,
@@ -471,7 +452,7 @@ async function obtenerDatosFormulario() {
         productos,
         archivos: {
             logo: await archivoABase64(logoFile),
-            capture: await archivoABase64(captureFile)
+            capture: await archivoABase64(captureFile, nombreComprobantePersonalizado)
         }
     };
 }
@@ -504,32 +485,176 @@ function validarFormulario() {
 }
 
 async function enviarPatrocinio(datos) {
-    await fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(datos)
-    });
+    if (window.google && google.script && google.script.run) {
+        return new Promise((resolve, reject) => {
+            google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler(reject)
+                .guardarPatrocinio(datos);
+        });
+    }
 
+    console.log('Datos listos para enviar a Apps Script:', datos);
     return {
         ok: true,
-        mensaje: 'Patrocinio enviado correctamente. Revisa Google Sheets para confirmar el registro.'
+        modo: 'demo',
+        mensaje: 'Formulario validado. Falta conectar la función guardarPatrocinio(datos) en Apps Script.'
     };
+}
+
+
+function crearModalConfirmacionSiNoExiste() {
+    let overlay = document.getElementById('confirmModalOverlay');
+
+    if (overlay) return overlay;
+
+    overlay = document.createElement('div');
+    overlay.id = 'confirmModalOverlay';
+    overlay.className = 'confirm-modal-overlay';
+
+    overlay.innerHTML = `
+        <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+            <div class="confirm-modal-header">
+                <h2 id="confirmModalTitle">Confirmar patrocinio</h2>
+                <p>Revisa que los datos estén correctos antes de enviarlos al sistema.</p>
+            </div>
+
+            <div class="confirm-modal-body" id="confirmModalBody"></div>
+
+            <div class="confirm-modal-actions">
+                <button type="button" class="btn-modal-cancel" id="btnCancelarEnvio">Editar datos</button>
+                <button type="button" class="btn-modal-confirm" id="btnConfirmarEnvio">Confirmar y enviar</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    return overlay;
+}
+
+function construirResumenConfirmacion(datos) {
+    const c = datos.columnas;
+    const productos = datos.productos || [];
+
+    const filasGenerales = [
+        ['Estudiante responsable', c['Estudiante responsable']],
+        ['Patrocinante', c['Patrocinante']],
+        ['Descripción de la empresa', c['Descripción de la empresa']],
+        ['Instagram', c['Instagram']],
+        ['Tipo de aporte', c['Tipo de aporte']],
+        ['Plan de patrocinio', c['Plan de patrocinio']],
+        ['Monto del plan', `$${c['Monto del plan']}`],
+        ['Logo', c['Logo']],
+        ['Valor estimado', `$${formatoNumero(c['Valor estimado'])}`],
+        ['Fecha de entrega / prestación', c['Fecha de entrega']],
+        ['Recibido', c['Recibido']],
+        ['Estado finanzas', c['Estado finanzas']]
+    ];
+
+    if (c['Tipo de aporte'] === 'Monetario') {
+        filasGenerales.push(['Método de pago', c['Método de pago']]);
+        filasGenerales.push(['Referencia', c['Referencia']]);
+        filasGenerales.push(['Comprobante', c['Capture']]);
+    }
+
+    let html = `
+        <table class="confirm-table">
+            <tbody>
+                ${filasGenerales.map(([label, value]) => `
+                    <tr>
+                        <th>${escapeHtml(label)}</th>
+                        <td>${escapeHtml(value || 'No aplica')}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+
+    if (c['Tipo de aporte'] === 'Producto' && productos.length) {
+        html += `
+            <div class="confirm-products">
+                <h3>Productos registrados</h3>
+                <ul>
+                    ${productos.map((producto) => `
+                        <li>
+                            <strong>${escapeHtml(producto.nombre)}</strong> —
+                            ${escapeHtml(producto.cantidad)} ${escapeHtml(producto.unidad)} —
+                            $${escapeHtml(formatoNumero(producto.valor))}
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+        `;
+    }
+
+    if (c['Tipo de aporte'] === 'Servicio') {
+        html += `
+            <div class="confirm-products">
+                <h3>Servicio registrado</h3>
+                <p>${escapeHtml(c['¿Qué aporta?'])}</p>
+            </div>
+        `;
+    }
+
+    return html;
+}
+
+function mostrarConfirmacionEnvio(datos) {
+    return new Promise((resolve) => {
+        const overlay = crearModalConfirmacionSiNoExiste();
+        const body = document.getElementById('confirmModalBody');
+        const btnCancelar = document.getElementById('btnCancelarEnvio');
+        const btnConfirmar = document.getElementById('btnConfirmarEnvio');
+
+        body.innerHTML = construirResumenConfirmacion(datos);
+        overlay.classList.add('active');
+
+        function cerrar(resultado) {
+            overlay.classList.remove('active');
+            btnCancelar.removeEventListener('click', cancelar);
+            btnConfirmar.removeEventListener('click', confirmar);
+            resolve(resultado);
+        }
+
+        function cancelar() {
+            cerrar(false);
+        }
+
+        function confirmar() {
+            cerrar(true);
+        }
+
+        btnCancelar.addEventListener('click', cancelar);
+        btnConfirmar.addEventListener('click', confirmar);
+    });
 }
 
 form.addEventListener('submit', async function(e) {
     e.preventDefault();
+    form.classList.add('was-submitted');
     ocultarMensajeFormulario();
 
     if (!validarFormulario()) return;
 
     try {
         btnSubmit.disabled = true;
-        btnSubmit.textContent = 'Enviando...';
+        btnSubmit.textContent = 'Preparando...';
 
         const datos = await obtenerDatosFormulario();
+
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Enviar patrocinio';
+
+        const confirmado = await mostrarConfirmacionEnvio(datos);
+
+        if (!confirmado) {
+            return;
+        }
+
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Enviando...';
+
         const respuesta = await enviarPatrocinio(datos);
 
         if (respuesta && respuesta.ok === false) {
@@ -538,11 +663,12 @@ form.addEventListener('submit', async function(e) {
 
         const mensaje = respuesta && respuesta.mensaje
             ? respuesta.mensaje
-            : '¡Patrocinio registrado correctamente!';
+            : 'Patrocinio enviado correctamente. Revisa Google Sheets para confirmar el registro.';
 
         mostrarMensajeFormulario(mensaje, 'success');
 
         form.reset();
+        form.classList.remove('was-submitted');
         productosContainer.innerHTML = '';
         contadorProductos = 0;
         actualizarSecciones();
