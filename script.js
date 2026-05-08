@@ -74,8 +74,8 @@ const UNIDADES = [
     'Otro'
 ];
 
-const MAX_PRODUCTOS = 5;
-let contadorProductos = 0;
+const STOCK_REFRESH_MS = 30000; // 30 segundos
+let stockRefreshInterval = null;
 
 const form = document.getElementById('patrociniosForm');
 const tipoAporte = document.getElementById('tipoAporte');
@@ -813,6 +813,9 @@ tipoAporte.addEventListener('change', actualizarSecciones);
 nombrePlan.addEventListener('change', actualizarMontoPlan);
 btnAgregarProducto.addEventListener('click', agregarProducto);
 
+const STOCK_REFRESH_MS = 30000; // 30 segundos
+let stockRefreshInterval = null;
+
 function cargarStockDisponibleDesdeSheets() {
     return new Promise((resolve) => {
         const callbackName = 'stockCallback_' + Date.now();
@@ -839,16 +842,22 @@ function cargarStockDisponibleDesdeSheets() {
                         requerido: '',
                         unidad: ''
                     });
+
+                    resolve(true);
+                    return;
                 }
+
+                resolve(false);
+
             } catch (error) {
                 console.error('Error cargando stock:', error);
+                resolve(false);
+
             } finally {
                 delete window[callbackName];
 
                 const script = document.getElementById(callbackName);
                 if (script) script.remove();
-
-                resolve();
             }
         };
 
@@ -859,17 +868,71 @@ function cargarStockDisponibleDesdeSheets() {
         script.onerror = function() {
             console.error('No se pudo cargar el stock desde Sheets.');
             delete window[callbackName];
-            resolve();
+            resolve(false);
         };
 
         document.body.appendChild(script);
     });
 }
 
+function actualizarOpcionesProductosAbiertos() {
+    const selects = document.querySelectorAll('.producto-nombre');
+
+    selects.forEach((select) => {
+        const valorAnterior = select.value;
+
+        select.innerHTML = `
+            <option value="">Selecciona un insumo pendiente del stock</option>
+            ${obtenerOpcionesInsumos()}
+        `;
+
+        const sigueDisponible = INSUMOS_STOCK.some((item) => item.nombre === valorAnterior);
+
+        if (valorAnterior && sigueDisponible) {
+            select.value = valorAnterior;
+        } else if (valorAnterior && !sigueDisponible) {
+            select.value = '';
+
+            const card = select.closest('[data-product-card]');
+            if (card) {
+                const unidad = card.querySelector('.producto-unidad');
+                const nota = card.querySelector('.stock-note');
+
+                if (unidad) unidad.value = '';
+
+                if (nota) {
+                    nota.textContent = 'Este insumo ya no está pendiente en stock. Selecciona otro.';
+                }
+            }
+        }
+    });
+}
+
+async function actualizarStockFormularioEnVivo() {
+    const actualizado = await cargarStockDisponibleDesdeSheets();
+
+    if (actualizado) {
+        actualizarOpcionesProductosAbiertos();
+    }
+}
+
+function iniciarActualizacionStockEnVivo() {
+    if (stockRefreshInterval) {
+        clearInterval(stockRefreshInterval);
+    }
+
+    stockRefreshInterval = setInterval(async function() {
+        if (tipoAporte && tipoAporte.value === 'Producto') {
+            await actualizarStockFormularioEnVivo();
+        }
+    }, STOCK_REFRESH_MS);
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await cargarStockDisponibleDesdeSheets();
     actualizarMontoPlan();
     actualizarSecciones();
+    iniciarActualizacionStockEnVivo();
 });
 
 function escapeHtml(texto) {
