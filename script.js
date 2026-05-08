@@ -813,9 +813,6 @@ tipoAporte.addEventListener('change', actualizarSecciones);
 nombrePlan.addEventListener('change', actualizarMontoPlan);
 btnAgregarProducto.addEventListener('click', agregarProducto);
 
-const STOCK_REFRESH_MS = 30000; // 30 segundos
-let stockRefreshInterval = null;
-
 function cargarStockDisponibleDesdeSheets() {
     return new Promise((resolve) => {
         const callbackName = 'stockCallback_' + Date.now();
