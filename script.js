@@ -61,11 +61,14 @@ const UNIDADES = [
     'Botella pequeña',
     'Bulto',
     'Cartón',
+    'Cartones',
     'Caja',
     'Paquete',
     'Paquetes',
     'Bolsa',
     'Bolsas',
+    'Ml',
+    'Galones',
     'Servicio',
     'No aplica',
     'Otro'
@@ -229,7 +232,7 @@ function obtenerOpcionesInsumos() {
     return INSUMOS_STOCK.map((insumo) => {
         const label = insumo.nombre === 'Otro'
             ? 'Otro'
-            : `${insumo.nombre} — ${insumo.categoria} — requerido: ${insumo.requerido} ${insumo.unidad}`;
+            : `${insumo.nombre} — ${insumo.categoria} — faltan: ${insumo.requerido} ${insumo.unidad}`;
 
         return `<option value="${escapeHtml(insumo.nombre)}" data-unidad="${escapeHtml(insumo.unidad)}">${escapeHtml(label)}</option>`;
     }).join('');
@@ -269,12 +272,12 @@ function agregarProducto() {
                 </label>
 
                 <select id="productoNombre${productoId}" class="input-select producto-nombre" data-product-required required onchange="manejarCambioProducto(${productoId})">
-                    <option value="">Selecciona un insumo del stock</option>
+                    <option value="">Selecciona un insumo pendiente del stock</option>
                     ${obtenerOpcionesInsumos()}
                 </select>
 
                 <p class="field-help stock-note" id="productoStockNota${productoId}">
-                    Selecciona un insumo para ver su unidad sugerida.
+                    Selecciona un insumo para ver cuánto falta.
                 </p>
             </div>
 
@@ -339,11 +342,11 @@ function manejarCambioProducto(productoId) {
 
     if (nota) {
         if (insumo && insumo.nombre !== 'Otro') {
-            nota.textContent = `Stock requerido: ${insumo.requerido} ${insumo.unidad}. Categoría: ${insumo.categoria}.`;
+            nota.textContent = `Faltan ${insumo.requerido} ${insumo.unidad}. Categoría: ${insumo.categoria}.`;
         } else if (select.value === 'Otro') {
             nota.textContent = 'Escribe el nombre del producto en el campo adicional.';
         } else {
-            nota.textContent = 'Selecciona un insumo para ver su unidad sugerida.';
+            nota.textContent = 'Selecciona un insumo para ver cuánto falta.';
         }
     }
 
@@ -793,6 +796,8 @@ form.addEventListener('submit', async function(e) {
         form.classList.remove('was-submitted');
         productosContainer.innerHTML = '';
         contadorProductos = 0;
+
+        await cargarStockDisponibleDesdeSheets();
         actualizarSecciones();
 
     } catch (error) {
@@ -814,13 +819,19 @@ function cargarStockDisponibleDesdeSheets() {
 
         window[callbackName] = function(respuesta) {
             try {
+                console.log('Stock recibido desde Sheets:', respuesta);
+
                 if (respuesta && respuesta.ok && Array.isArray(respuesta.stock)) {
-                    INSUMOS_STOCK = respuesta.stock.map((item) => ({
-                        nombre: item.nombre,
-                        categoria: item.categoria,
-                        requerido: item.faltante,
-                        unidad: item.unidad
-                    }));
+                    const stockPendiente = respuesta.stock
+                        .filter((item) => Number(item.faltante || 0) > 0)
+                        .map((item) => ({
+                            nombre: item.nombre,
+                            categoria: item.categoria,
+                            requerido: item.faltante,
+                            unidad: item.unidad
+                        }));
+
+                    INSUMOS_STOCK = stockPendiente;
 
                     INSUMOS_STOCK.push({
                         nombre: 'Otro',
@@ -843,7 +854,7 @@ function cargarStockDisponibleDesdeSheets() {
 
         const script = document.createElement('script');
         script.id = callbackName;
-        script.src = `${WEB_APP_URL}?action=stock&callback=${callbackName}`;
+        script.src = `${WEB_APP_URL}?action=stock&callback=${callbackName}&t=${Date.now()}`;
 
         script.onerror = function() {
             console.error('No se pudo cargar el stock desde Sheets.');
