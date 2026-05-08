@@ -7,7 +7,7 @@ const PLANES = {
     'Aliado Oro / Estratégico': 80
 };
 
-const INSUMOS_STOCK = [
+let INSUMOS_STOCK = [
     { nombre: 'Queso Blanco', categoria: 'Proteína', requerido: 7, unidad: 'Kg' },
     { nombre: 'Pechuga de pollo', categoria: 'Proteína', requerido: 10, unidad: 'Kg' },
     { nombre: 'Falda/Pecho', categoria: 'Proteína', requerido: 6, unidad: 'Kg' },
@@ -808,7 +808,55 @@ tipoAporte.addEventListener('change', actualizarSecciones);
 nombrePlan.addEventListener('change', actualizarMontoPlan);
 btnAgregarProducto.addEventListener('click', agregarProducto);
 
-document.addEventListener('DOMContentLoaded', function() {
+function cargarStockDisponibleDesdeSheets() {
+    return new Promise((resolve) => {
+        const callbackName = 'stockCallback_' + Date.now();
+
+        window[callbackName] = function(respuesta) {
+            try {
+                if (respuesta && respuesta.ok && Array.isArray(respuesta.stock)) {
+                    INSUMOS_STOCK = respuesta.stock.map((item) => ({
+                        nombre: item.nombre,
+                        categoria: item.categoria,
+                        requerido: item.faltante,
+                        unidad: item.unidad
+                    }));
+
+                    INSUMOS_STOCK.push({
+                        nombre: 'Otro',
+                        categoria: 'Otro',
+                        requerido: '',
+                        unidad: ''
+                    });
+                }
+            } catch (error) {
+                console.error('Error cargando stock:', error);
+            } finally {
+                delete window[callbackName];
+
+                const script = document.getElementById(callbackName);
+                if (script) script.remove();
+
+                resolve();
+            }
+        };
+
+        const script = document.createElement('script');
+        script.id = callbackName;
+        script.src = `${WEB_APP_URL}?action=stock&callback=${callbackName}`;
+
+        script.onerror = function() {
+            console.error('No se pudo cargar el stock desde Sheets.');
+            delete window[callbackName];
+            resolve();
+        };
+
+        document.body.appendChild(script);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await cargarStockDisponibleDesdeSheets();
     actualizarMontoPlan();
     actualizarSecciones();
 });
