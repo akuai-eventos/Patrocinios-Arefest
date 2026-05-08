@@ -74,7 +74,10 @@ const UNIDADES = [
     'Otro'
 ];
 
+const MAX_PRODUCTOS = 5;
 const STOCK_REFRESH_MS = 30000; // 30 segundos
+
+let contadorProductos = 0;
 let stockRefreshInterval = null;
 
 const form = document.getElementById('patrociniosForm');
@@ -887,15 +890,21 @@ function actualizarOpcionesProductosAbiertos() {
 
         if (valorAnterior && sigueDisponible) {
             select.value = valorAnterior;
-        } else if (valorAnterior && !sigueDisponible) {
+            return;
+        }
+
+        if (valorAnterior && !sigueDisponible) {
             select.value = '';
 
             const card = select.closest('[data-product-card]');
+
             if (card) {
                 const unidad = card.querySelector('.producto-unidad');
                 const nota = card.querySelector('.stock-note');
 
-                if (unidad) unidad.value = '';
+                if (unidad) {
+                    unidad.value = '';
+                }
 
                 if (nota) {
                     nota.textContent = 'Este insumo ya no está pendiente en stock. Selecciona otro.';
@@ -903,6 +912,8 @@ function actualizarOpcionesProductosAbiertos() {
             }
         }
     });
+
+    actualizarCamposOtroProducto();
 }
 
 async function actualizarStockFormularioEnVivo() {
