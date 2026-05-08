@@ -40,7 +40,7 @@ const INSUMOS_STOCK = [
     { nombre: 'Sangría Blanca o cervezas', categoria: 'Víveres', requerido: 1, unidad: 'Lt' },
     { nombre: 'Servilletas', categoria: 'Víveres', requerido: 4, unidad: 'Paquetes' },
     { nombre: 'Toallín', categoria: 'Víveres', requerido: 1, unidad: 'Unidad' },
-    { nombre: 'Vinagre', categoria: 'Víveres', requerido: 0.5, unidad: 'Lt' },
+    { nombre: 'Vinagre', categoria: 'Víveres', requerido: 500, unidad: 'Ml' },
 
     { nombre: 'Guantes desechables', categoria: 'Utensilios', requerido: 1, unidad: 'Caja' },
     { nombre: 'Teteros dispensadores de salsas', categoria: 'Utensilios', requerido: 5, unidad: 'Unidades' },
@@ -543,7 +543,7 @@ async function obtenerDatosFormulario() {
         fechaEntrega = getValue('fechaEntregaServicio');
     }
 
-    const recibidoAutomatico = tipo === 'Monetario' ? 'Sí' : 'Pendiente';
+    const recibidoAutomatico = 'Pendiente';
     const estadoFinanzasAutomatico = tipo === 'Monetario' ? 'Pago confirmado' : 'No aplica';
 
     return {
